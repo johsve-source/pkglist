@@ -71,7 +71,6 @@ fn main() {
 
     let cache_file = "/tmp/pkglist_cache.json";
 
-    // Aktuella installerade paket
     let output = Command::new("pacman")
         .args(["-Qeq"])
         .output()
@@ -84,7 +83,6 @@ fn main() {
     let current_pkg_hash = format!("{:x}", md5::compute(current_pkgs.join(",")));
     let current_log_size = get_log_size();
 
-    // Läs cache
     let mut cache_data: CacheData = if Path::new(cache_file).exists() {
         fs::read_to_string(cache_file)
             .ok()
@@ -102,7 +100,6 @@ fn main() {
         }
     };
 
-    // Uppdatera cache om logg eller paketlista ändrats
     if cache_data.pkg_hash != current_pkg_hash || cache_data.last_log_size != current_log_size {
         if let Ok(log_content) = fs::read_to_string("/var/log/pacman.log") {
             cache_data.data = parse_log_entries(&log_content);
@@ -115,7 +112,6 @@ fn main() {
         );
     }
 
-    // Kombinera installerade paket med tidigare loggade paket (inkl. REM)
     let mut pkg_set: HashMap<String, (String, String)> = cache_data
         .data
         .iter()
@@ -132,14 +128,12 @@ fn main() {
         );
     }
 
-    // Konvertera till vektor och sortera på datum
     let mut pkg_list: Vec<(String, String, String)> = pkg_set
         .into_iter()
         .map(|(pkg, (date, status))| (pkg, date, status))
         .collect();
     pkg_list.sort_by(|a, b| a.1.cmp(&b.1));
 
-    // Skriv ut
     for (pkg, date_str, status) in pkg_list {
         let status_colored = match status.as_str() {
             "INS" => ins_color.paint(&status),
